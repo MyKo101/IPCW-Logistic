@@ -3,7 +3,7 @@
 rm(list=ls())
 pkgs <- c("readr","tibble","dplyr","magrittr",
           "survival","purrr","tidyr","rlang",
-          "furrr","stringr","pseudo")
+          "furrr","stringr","pseudo","ggplot2")
 
 invisible(purrr::walk(pkgs,library,character.only=T))
 
@@ -12,6 +12,7 @@ source("calibration functions.R")
 source("save and load functions.R")
 source("dgm functions.R")
 source("aggregating functions.R")
+source("plot functions.R")
 
 
 ### Global Parameters to use ####################
@@ -30,8 +31,8 @@ e.list <- (-1:1)/2
 
 ## We're going to prioritise these first:
 
-g.list <- (-2:2)/2
-b.list <- 1
+g.list <- 0
+b.list <- setdiff((-2:2)/2,0)
 e.list <- 0.5
 
 
@@ -49,7 +50,7 @@ memory.limit(20000)
 Run_parallel %<>% min(parallel::detectCores()-1)
 
 #Load previous results (if relevant) & get avg time
-Done <- Load_Done("All Results")
+Done <- Load_Done("All Results",nt)
 
 avg.time <- mean(Done$time.taken,na.rm=T)/1000
 
@@ -94,8 +95,12 @@ if(nrow(Sims.tbd) > 0)
 
 # Aggregate the data into Performance Metrics
 
-Get_All_PM("All Results","Aggregate Results")
+Get_All_PM("All Results","Aggregate Results",nt)
 
 
+#Generate ALL plots
+plots.CIL <- Make_All_MainPlots("Aggregate Results","MainPlots","None")
+plots.slopes <- Make_All_MainPlots("Aggregate Results","MainPlots","Only")
+plots.all <- Make_All_MainPlots("Aggregate Results","MainPlots","All")
 
 

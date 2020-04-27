@@ -23,13 +23,15 @@ Get_PMs <- function(.res)
     ungroup
 }
 
-Get_All_PM <- function(All_dir=".",Agg_dir=".")
+Get_All_PM <- function(All_dir=".",Agg_dir=".",nt)
 {
-  Done <- Load_Done(All_dir) %>%
+  Done <- Load_Done(All_dir,nt) %>%
     group_by(b,g,e) %>%
     summarise(n=n())
   
   write_csv(Done,paste0(Agg_dir,"/00-Done.csv"))
+  
+  Save_Plot_ranges(Agg_dir)
   
   Done %<>%
     ungroup %>%

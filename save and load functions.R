@@ -53,7 +53,7 @@ Save_Errors <- function(res,X,dir=".")
   return(.out)
 }
 
-Load_Done <- function(dir=".")
+Load_Done <- function(dir=".",nt)
 {
   ff <- list.files(dir)
   if(length(ff) > 0) 
@@ -163,10 +163,61 @@ Save_Aggregate_Results <- function(X,All_dir=".",Agg_dir=".")
   return(X)
 }
 
+Load_Done_Summary <- function(Agg_dir=".")
+{
+  Agg_dir %>%
+    paste0("/00-Done.csv") %>%
+    read_csv(col_types=cols())
+}
+
+Save_Plot<-function(b,g,e,p,dir=".")  
+{
+  .filename <- paste0("MainPlot",
+                      "_b(",b,")",
+                      "_g(",g,")",
+                      "_e(",e,")",
+                      ".png") %>%
+    paste0(dir,"/",.)
   
   
+  ggsave(.filename,p,dpi=500,width=20,height=10,units="cm")
   
+  return(.filename)
   
+}
+
+Save_Plot_tibble <- function(X,dir=".")
+{
+  Save_Plot(X$b,X$g,X$e,X$p[[1]],dir=dir)
+}
+  
+
+Save_Plot_ranges <- function(dir=".")
+{
+  list.files(dir) %>%
+    .[grep("^Aggregate",.)] %>%
+    paste0(dir,"/",.) %>% 
+    map_dfr(~read_csv(.,col_types=cols()) %>%
+              pivot_longer(cols=-c(Model,it),
+                           names_to=c("Method","Measure","Est"),
+                           names_sep="_",
+                           values_to="values") %>%
+              mutate(Slope = if_else(grepl(".Slope",Method),"Only","None")) %>%
+              select(Measure,Slope,values) %>%
+              group_by(Measure,Slope) %>%
+              summarise(file.min=min(values,na.rm=T),
+                        file.max=max(values,na.rm=T))
+              ) %>%
+    bind_rows(mutate(.,Slope = "All")) %>%
+    bind_rows(tibble(Measure = c("Coverage","Coverage","Bias","EmpSE"),
+                     file.min = c(0,1,0,0),
+                     file.max = c(0,1,0,0)) %>% 
+                group_by_all %>%
+                expand(Slope = c("None","All","Only"))) %>%
+    group_by(Measure,Slope) %>%
+    summarise(min = min(file.min),max=max(file.max)) %>%
+    write_csv(paste0(dir,"/00-Ranges.csv"))
+}
   
 
 

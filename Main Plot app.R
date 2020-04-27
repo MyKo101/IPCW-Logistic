@@ -11,7 +11,10 @@ library(shiny)
 library(ggplot2)
 library(readr)
 
-source("plot functions.R")
+Agg_dir <- "Aggregate Results"
+Plot_dir <- "MainPlots"
+
+Done <- read_csv(paste0(Agg_dir,"/00-Done.csv"),col_types=cols())
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -47,26 +50,66 @@ ui <- fluidPage(
                         "Select Calibration type",
                         choices=c("Calibration-in-the-large",
                                   "Calibration Slope",
-                                  "Both"))
+                                  "Both")),
+            textOutput("N_show")
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           plotOutput("MainPlot")
         )
     )
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output,session) {
+    
+    output$N_show <- renderText({
+        N <- Done %>% 
+            filter(b == input$b &
+                   g == input$g &
+                   e == input$e &
+                   n > 2) %>%
+            pull("n") %>%
+            max(0)
+        
+        if(N == 0)
+        {
+            .res <- "No Results Yet"
+        } else
+        {
+            .res <- paste0("Number of Simulations: ",N)
+        }
+    })
 
-    output$distPlot <- renderPlot({
+    output$MainPlot <- renderImage({
         slope <- switch(input$slope_choice,
                         `Calibration-in-the-large` = "None",
                         `Calibration Slope` = "Only",
                         `Both` = "All")
-        Make_MainPlot(input$b,input$g,input$e,"Aggregate Results",slope)
-    })
+        
+        .filename <- paste0(Plot_dir,"/",
+                            slope,"/",
+                            "MainPlot",
+                            "_b(",input$b,")",
+                            "_g(",input$g,")",
+                            "_e(",input$e,")",
+                            ".png")
+        
+        ww <- session$clientData$output_MainPlot_width
+        hh <- session$clientData$output_MainPlot_height
+        
+        ww <- min(ww,hh*(20/10))
+        hh <- min(hh,ww/(20/10))
+        
+        return(list(src=.filename,
+                    alt = .filename,
+                    width=ww,
+                    height=hh))
+        
+    },deleteFile=F)
+    
+    
 }
 
 # Run the application 
