@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1587947079213.000,
+    "dirty" : false,
+    "encoding" : "ISO8859-1",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C7593A23",
+    "lastKnownWriteTime" : 1587947607,
+    "last_content_update" : 1587947607392,
+    "path" : "C:/Users/mbrxsmbc/Documents/IPCW Logisitic/Simulation Script.R",
+    "project_path" : "Simulation Script.R",
+    "properties" : {
+        "cursorPosition" : "23,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
