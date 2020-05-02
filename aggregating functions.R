@@ -23,21 +23,37 @@ Get_PMs <- function(.res)
     ungroup
 }
 
+mid_frac_by <- function(.tbl,cut,...)
+{
+  grps <- enquos(...)
+
+  first.cut <- 1-(1-cut)/2
+  second.cut <- 1-(1-first.cut)/first.cut
+  
+  .tbl %>%
+    group_by(!!! grps) %>%
+    arrange(Est) %>%
+    top_n(ceiling(first.cut*n()),Est) %>%
+    top_n(-ceiling(second.cut*n()),Est) %>%
+    ungroup
+}
+
 Get_All_PM <- function(All_dir=".",Agg_dir=".",nt)
 {
-  Done <- Load_Done(All_dir,nt) %>%
-    group_by(b,g,e) %>%
-    summarise(n=n())
+  Done <- Load_Done(All_dir,nt) 
   
   write_csv(Done,paste0(Agg_dir,"/00-Done.csv"))
   
-  Save_Plot_ranges(Agg_dir)
   
   Done %<>%
+    group_by(b,g,e) %>%
+    summarise(n=n()) %>%
     ungroup %>%
-    filter(n > 2) %>%
+    filter(n > 5) %>%
     split(1:nrow(.)) %>% 
     map_dfr(~Save_Aggregate_Results(.,All_dir,Agg_dir))
+  
+  Save_Plot_ranges(Agg_dir)
   
   return(Done)
   

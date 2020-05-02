@@ -10,11 +10,17 @@
 library(shiny)
 library(ggplot2)
 library(readr)
+library(tidyverse)
 
 Agg_dir <- "Aggregate Results"
 Plot_dir <- "MainPlots"
 
-Done <- read_csv(paste0(Agg_dir,"/00-Done.csv"),col_types=cols())
+Done <- Agg_dir %>%
+    paste0("/00-Done.csv") %>%
+    read_csv(col_types = cols())%>%
+    group_by(b,g,e) %>%
+    summarise(n=n()) %>%
+    ungroup
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -66,12 +72,12 @@ server <- function(input, output,session) {
     
     output$N_show <- renderText({
         N <- Done %>% 
-            filter(b == input$b &
-                   g == input$g &
-                   e == input$e &
-                   n > 2) %>%
+            filter(b == input$b & 
+                   g == input$g & 
+                   e == input$e & 
+                   n > 5) %>%
             pull("n") %>%
-            max(0)
+            max(0,na.rm=T)
         
         if(N == 0)
         {

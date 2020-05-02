@@ -13,6 +13,9 @@ ggMainplot <- function(tbl,.range=NULL)
     ungroup %>%
     mutate(it=50)
     
+  ##For the Methods, increase their nchar to be the same as Unweighted.Slope
+   #(hopefully this'll make everything the same width)
+  #Then create a blank plot (for when there is insufficient data)
     
   
   ggplot(tbl) +
@@ -27,10 +30,10 @@ ggMainplot <- function(tbl,.range=NULL)
   
 }
 
-Prepare_Plot <- function(filename,Methods,dir)
+Prepare_Plot <- function(filename,Methods,Agg_dir)
 {
   filename %>%
-    paste0(dir,"/",.) %>%
+    paste0(Agg_dir,"/",.) %>%
     read_csv(col_types=cols()) %>%
     pivot_longer(col=-c(Model,it),
                  names_to=c("Method","Measure","Est"),names_sep="_",
@@ -42,11 +45,14 @@ Prepare_Plot <- function(filename,Methods,dir)
     mutate(Model = recode(Model,
                           U = "Under-prediction",
                           O = "Over-prediction",
-                          P = "Perfect"))
+                          P = "Perfect")) %>%
+    mutate(Method=recode(Method,Pseudo="PO",Unweighted="LU",Weighted="LO",
+                         Pseudo.Slope="POS",Unweighted.Slope="LUS",
+                         Weighted.Slope="LOS"))
   
 }
 
-Make_MainPlot <- function(b,g,e,dir=".",slope="None",anim=F)
+Make_MainPlot <- function(b,g,e,Agg_dir=".",slope="None")
 {
   #slope values:
   #   None = Only Calibration-in-the-large results
@@ -61,7 +67,7 @@ Make_MainPlot <- function(b,g,e,dir=".",slope="None",anim=F)
                             "Weighted.Slope","Unweighted.Slope",
                             "Pseudo.Slope"))
   
-  Ranges <- read_csv(paste0(dir,"/00-Ranges.csv"),
+  Ranges <- read_csv(paste0(Agg_dir,"/00-Ranges.csv"),
                      col_types=cols()) %>%
     filter(Slope == slope) %>%
     select(-Slope) %>%
@@ -70,7 +76,7 @@ Make_MainPlot <- function(b,g,e,dir=".",slope="None",anim=F)
                  values_to="Est") %>%
     select(Measure,Est)
 
-  ff <- list.files(dir)
+  ff <- list.files(Agg_dir)
   
   regex.search <- paste0("_b(",b,")",
                          "_g(",g,")",
@@ -80,41 +86,45 @@ Make_MainPlot <- function(b,g,e,dir=".",slope="None",anim=F)
   
   if(length(ff) == 1)
   {
-    tbl <- Prepare_Plot(ff,Methods,dir)
+    tbl <- Prepare_Plot(ff,Methods,Agg_dir)
     
-    if(!anim)
-    {
-      p <- ggMainplot(tbl,Ranges)
-      return(p)
-    } else return(tbl)
-      
+    p <- ggMainplot(tbl,Ranges)
     
-    
+    return(p)
     
     
   } else return(NULL)
 }
 
-Make_MainPlot_tibble <- function(X,dir=".",slope="None")
+Make_MainPlot_tibble <- function(X,Agg_dir=".",slope="None")
 {
-  p <- Make_MainPlot(X$b,X$g,X$e,dir=dir,slop=slope,anim=F)
+  p <- Make_MainPlot(X$b,X$g,X$e,Agg_dir=Agg_dir,slope=slope)
   
   tibble(b=X$b,g=X$g,e=X$e,p=list(p))
 }
 
 Make_All_MainPlots <- function(Agg_dir=".",Plot_dir=".",slope="None")
 {
-  Load_Done_Summary(Agg_dir) %>%
-    filter(n>2) %>%
+  Load_Done_Summary(Agg_dir) %>% 
+    group_by(b,g,e) %>%
+    summarise(n=n()) %>%
+    filter(n>5) %>%
+    ungroup %>% 
     split(1:nrow(.)) %>%
-    map_chr(~Make_MainPlot_tibble(.,dir=Agg_dir) %>%
-              Save_Plot_tibble(dir=paste0(Plot_dir,"/",slope)))
+    map_chr(~Make_MainPlot_tibble(.,Agg_dir=Agg_dir,slope=slope) %>%
+              Save_Plot_tibble(Plot_dir=paste0(Plot_dir,"/",slope)))
   
 }
 
 
-  
-  
+  options(warn=2)
+for(i in 1:length(p.tib))
+{
+  cp <- p.tib[[i]]
+  cat("\nb = ",cp$b,"\tg = ",cp$g,"\te = ",cp$e)
+  print(cp$p)
+  Sys.sleep(10)
+}
   
   
   

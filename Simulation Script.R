@@ -7,6 +7,7 @@ pkgs <- c("readr","tibble","dplyr","magrittr",
 
 invisible(purrr::walk(pkgs,library,character.only=T))
 
+
 source("util functions.R")
 source("calibration functions.R")
 source("save and load functions.R")
@@ -25,15 +26,15 @@ nt <- 100 #Number of time points
 
 # Vector of what parameters to try (full list)
 g.list <- (-4:4)/2
-b.list <- setdiff(g.list,0) 
+b.list <- (-4:4)/2
 e.list <- (-1:1)/2
 
 
 ## We're going to prioritise these first:
 
-g.list <- 0
-b.list <- setdiff((-2:2)/2,0)
-e.list <- 0.5
+#g.list <- -1:1
+#b.list <- -1:1
+#e.list <- -1:1/2
 
 
 ###############################################
@@ -50,7 +51,7 @@ memory.limit(20000)
 Run_parallel %<>% min(parallel::detectCores()-1)
 
 #Load previous results (if relevant) & get avg time
-Done <- Load_Done("All Results",nt)
+Done <- Load_Done_Summary("Aggregate Results")
 
 avg.time <- mean(Done$time.taken,na.rm=T)/1000
 
@@ -65,7 +66,15 @@ Sims.tbd <- expand(tibble(),
                e = round(e.list,2),
                iter = 1:N) %>% 
   anti_join(Done,by=c("b","g","e","iter")) %>%
-  mutate(seed = round(runif(n(),0,2^31-1)))
+  mutate(seed = round(runif(n(),0,2^31-1))) %>%
+  left_join(Done %>%
+              group_by(b,g,e) %>%
+              summarise(n=n()),
+            by=c("b","g","e")) %>%
+  filter(n < 6) %>%
+  group_by(b,g,e) %>%
+  slice(1:(6-n)) %>%
+  ungroup
 
 # How long will this take?
 ETA <- nrow(Sims.tbd)*avg.time/Run_parallel
@@ -91,7 +100,7 @@ if(nrow(Sims.tbd) > 0)
                    .options=future_options(packages=pkgs),
                    .progress=T) %>%
     any
-} else Sims <- NULL
+}
 
 # Aggregate the data into Performance Metrics
 
@@ -102,5 +111,26 @@ Get_All_PM("All Results","Aggregate Results",nt)
 plots.CIL <- Make_All_MainPlots("Aggregate Results","MainPlots","None")
 plots.slopes <- Make_All_MainPlots("Aggregate Results","MainPlots","Only")
 plots.all <- Make_All_MainPlots("Aggregate Results","MainPlots","All")
+
+Thesis.plot.dir <- "C:/Users/mbrxsmbc/Documents/Thesis/MyThesis/figure/IPCW_Logistic"
+
+tibble(b=1,g=c(-1,0,1),e=0.5) %>%
+  mutate(fn = paste0("Plot_b(",b,")_g(",g,")_e(",e,").png")) %>%
+  group_by_all %>%
+  expand(src=c("Main","Slope")) %>%
+  mutate(dir=if_else(src == "Main","None","Only")) %>%
+  mutate(old_file=paste0("MainPlots/",dir,"/Main",fn),
+         new_file=paste0(Thesis.plot.dir,"/",src,fn)) %>%
+  ungroup %>%
+  split(1:nrow(.)) %>%
+  map(~{file.remove(.$new_file);return(.)}) %>%
+  map(~file.copy(.$old_file,.$new_file))
+
+
+
+
+
+
+
 
 
