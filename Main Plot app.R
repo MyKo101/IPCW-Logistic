@@ -11,6 +11,7 @@ library(shiny)
 library(ggplot2)
 library(readr)
 library(tidyverse)
+library(RCurl)
 
 Agg_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/Aggregate%20Results"
 Plot_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/MainPlots"
@@ -134,7 +135,8 @@ server <- function(input, output,session) {
                             "_e%28",input$e,"%29",
                             ".png")
         
-        if(output$N_show < 6)
+        
+        if(!url.exists(.filename))
         {
             .filename <- paste0(Plot_dir,"/",
                                 slope,"/",
@@ -144,7 +146,6 @@ server <- function(input, output,session) {
                                 "_e%28n%29",
                                 ".png")
         }
-        
         
         ww <- session$clientData$output_MainPlot_width
         hh <- session$clientData$output_MainPlot_height

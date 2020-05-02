@@ -25,27 +25,36 @@ ggMainplot <- function(tbl,.range=NULL)
   
 }
 
-ggMainPlot_blank <- function(.range=NULL)
+ggMainPlot_blank <- function(slope)
 {
-  if(is.null(.range))
-  {
-    .range <- tibble(Est=c(1,0,0,0),
-                     Measure=c("Coverage","Coverage","Bias","EmpSE"))
-  }
   
-  .range %<>%
+  Ranges <- read_csv(paste0(Agg_dir,"/00-Ranges.csv"),
+                     col_types=cols()) %>%
+    filter(Slope == slope) %>%
+    select(-Slope) %>%
+    pivot_longer(c(min,max),
+                 names_to="minmax",
+                 values_to="Est") %>%
+    select(Measure,Est)
+  
+  Methods <- switch(slope,
+                    None = c("KM","Weighted","Unweighted","Pseudo"),
+                    Only = c("Weighted.Slope","Unweighted.Slope",
+                             "Pseudo.Slope"),
+                    All = c("KM","Weighted","Unweighted","Pseudo",
+                            "Weighted.Slope","Unweighted.Slope",
+                            "Pseudo.Slope"))
+  
+  tbl <- tibble(Method=Methods,
+                Est=0,SE=0,LL=0,UL=0) %>%
     group_by_all %>%
-    expand(Model = c("Over-prediction","Under-prediction","Perfect")) %>%
-    ungroup %>%
-    mutate(it=50)
+    expand(Model=c("Over-prediction","Perfect","Under-prediction"),
+           Measure=c("Bias","Coverage","EmpSE"),
+           it=c(0,100))
   
-  ggplot() + 
-    geom_blank(aes(it,Est),data=.range) + 
-    facet_grid(rows=vars(Measure),cols=vars(Model),
-               scales="free") +
-    xlab("Time point") + 
-    ylab("Simulation Estimate")
+  p <- ggMainplot(tbl,.range)
   
+  return(p)
 }
 
 Prepare_Plot <- function(filename,Methods,Agg_dir)
@@ -132,16 +141,7 @@ Make_All_MainPlots <- function(Agg_dir=".",Plot_dir=".",slope="None")
     map_chr(~Make_MainPlot_tibble(.,Agg_dir=Agg_dir,slope=slope) %>%
               Save_Plot_tibble(Plot_dir=paste0(Plot_dir,"/",slope)))
   
-  
-  read_csv(paste0(Agg_dir,"/00-Ranges.csv"),
-           col_types=cols()) %>%
-    filter(Slope == slope) %>%
-    select(-Slope) %>%
-    pivot_longer(c(min,max),
-                 names_to="minmax",
-                 values_to="Est") %>%
-    select(Measure,Est) %>%
-    ggMainPlot_blank %>%
+  ggMainPlot_blank(slope) %>%
     Save_Plot(b="n",g="n",e="n",p=.,Plot_dir=paste0(Plot_dir,"/",slope))
     
   
