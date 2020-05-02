@@ -12,8 +12,11 @@ library(ggplot2)
 library(readr)
 library(tidyverse)
 
-Agg_dir <- "Aggregate Results"
-Plot_dir <- "MainPlots"
+Agg_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/Aggregate%20Results"
+Plot_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/MainPlots"
+#Plot_dir <- "MainPlots"
+
+#https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/MainPlots/None/MainPlot_b%281%29_g%28-0.5%29_e%280.5%29.png
 
 Done <- Agg_dir %>%
     paste0("/00-Done.csv") %>%
@@ -62,7 +65,8 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("MainPlot")
+            #plotOutput("MainPlot")
+            htmlOutput("MainPlot")
         )
     )
 )
@@ -87,8 +91,36 @@ server <- function(input, output,session) {
             .res <- paste0("Number of Simulations: ",N)
         }
     })
-
-    output$MainPlot <- renderImage({
+    
+    #output$MainPlot <- renderImage({
+    #    slope <- switch(input$slope_choice,
+    #                    `Calibration-in-the-large` = "None",
+    #                    `Calibration Slope` = "Only",
+    #                    `Both` = "All")
+    #    
+    #    .filename <- paste0(Plot_dir,"/",
+    #                        slope,"/",
+    #                        "MainPlot",
+    #                        "_b%28",input$b,"%29",
+    #                        "_g%28",input$g,"%29",
+    #                        "_e%28",input$e,"%29",
+    #                        ".png")
+    #    
+    #    ww <- session$clientData$output_MainPlot_width
+    #    hh <- session$clientData$output_MainPlot_height
+    #   
+    #    ww <- min(ww,hh*(20/10))
+    #    hh <- min(hh,ww/(20/10))
+    #    
+    #    return(list(src=.filename,
+    #                alt = paste0("Unavailable:\n",.filename),
+    #                width=ww,
+    #                height=hh))
+    #    
+    #},deleteFile=F)
+    
+    
+    output$MainPlot <- renderUI({
         slope <- switch(input$slope_choice,
                         `Calibration-in-the-large` = "None",
                         `Calibration Slope` = "Only",
@@ -97,23 +129,32 @@ server <- function(input, output,session) {
         .filename <- paste0(Plot_dir,"/",
                             slope,"/",
                             "MainPlot",
-                            "_b(",input$b,")",
-                            "_g(",input$g,")",
-                            "_e(",input$e,")",
+                            "_b%28",input$b,"%29",
+                            "_g%28",input$g,"%29",
+                            "_e%28",input$e,"%29",
                             ".png")
+        
+        if(output$N_show < 6)
+        {
+            .filename <- paste0(Plot_dir,"/",
+                                slope,"/",
+                                "MainPlot",
+                                "_b%28n%29",
+                                "_g%28n%29",
+                                "_e%28n%29",
+                                ".png")
+        }
+        
         
         ww <- session$clientData$output_MainPlot_width
         hh <- session$clientData$output_MainPlot_height
-        
+       
         ww <- min(ww,hh*(20/10))
         hh <- min(hh,ww/(20/10))
         
-        return(list(src=.filename,
-                    alt = .filename,
-                    width=ww,
-                    height=hh))
+        return(tags$img(src=.filename,width=600,height=300))
         
-    },deleteFile=F)
+    })
     
     
 }

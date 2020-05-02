@@ -13,11 +13,6 @@ ggMainplot <- function(tbl,.range=NULL)
     ungroup %>%
     mutate(it=50)
     
-  ##For the Methods, increase their nchar to be the same as Unweighted.Slope
-   #(hopefully this'll make everything the same width)
-  #Then create a blank plot (for when there is insufficient data)
-    
-  
   ggplot(tbl) +
     geom_line(aes(it,Est,col=Method)) + 
     geom_ribbon(aes(it,ymin=LL,ymax=UL,fill=Method),alpha=0.2)+
@@ -27,6 +22,29 @@ ggMainplot <- function(tbl,.range=NULL)
     xlab("Time point") + 
     ylab("Simulation Estimate")
     
+  
+}
+
+ggMainPlot_blank <- function(.range=NULL)
+{
+  if(is.null(.range))
+  {
+    .range <- tibble(Est=c(1,0,0,0),
+                     Measure=c("Coverage","Coverage","Bias","EmpSE"))
+  }
+  
+  .range %<>%
+    group_by_all %>%
+    expand(Model = c("Over-prediction","Under-prediction","Perfect")) %>%
+    ungroup %>%
+    mutate(it=50)
+  
+  ggplot() + 
+    geom_blank(aes(it,Est),data=.range) + 
+    facet_grid(rows=vars(Measure),cols=vars(Model),
+               scales="free") +
+    xlab("Time point") + 
+    ylab("Simulation Estimate")
   
 }
 
@@ -113,6 +131,19 @@ Make_All_MainPlots <- function(Agg_dir=".",Plot_dir=".",slope="None")
     split(1:nrow(.)) %>%
     map_chr(~Make_MainPlot_tibble(.,Agg_dir=Agg_dir,slope=slope) %>%
               Save_Plot_tibble(Plot_dir=paste0(Plot_dir,"/",slope)))
+  
+  
+  read_csv(paste0(Agg_dir,"/00-Ranges.csv"),
+           col_types=cols()) %>%
+    filter(Slope == slope) %>%
+    select(-Slope) %>%
+    pivot_longer(c(min,max),
+                 names_to="minmax",
+                 values_to="Est") %>%
+    select(Measure,Est) %>%
+    ggMainPlot_blank %>%
+    Save_Plot(b="n",g="n",e="n",p=.,Plot_dir=paste0(Plot_dir,"/",slope))
+    
   
 }
 
