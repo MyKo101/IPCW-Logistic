@@ -93,33 +93,6 @@ server <- function(input, output,session) {
         }
     })
     
-    #output$MainPlot <- renderImage({
-    #    slope <- switch(input$slope_choice,
-    #                    `Calibration-in-the-large` = "None",
-    #                    `Calibration Slope` = "Only",
-    #                    `Both` = "All")
-    #    
-    #    .filename <- paste0(Plot_dir,"/",
-    #                        slope,"/",
-    #                        "MainPlot",
-    #                        "_b%28",input$b,"%29",
-    #                        "_g%28",input$g,"%29",
-    #                        "_e%28",input$e,"%29",
-    #                        ".png")
-    #    
-    #    ww <- session$clientData$output_MainPlot_width
-    #    hh <- session$clientData$output_MainPlot_height
-    #   
-    #    ww <- min(ww,hh*(20/10))
-    #    hh <- min(hh,ww/(20/10))
-    #    
-    #    return(list(src=.filename,
-    #                alt = paste0("Unavailable:\n",.filename),
-    #                width=ww,
-    #                height=hh))
-    #    
-    #},deleteFile=F)
-    
     
     output$MainPlot <- renderUI({
         slope <- switch(input$slope_choice,
