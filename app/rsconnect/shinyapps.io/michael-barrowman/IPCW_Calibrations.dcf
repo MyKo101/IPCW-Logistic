@@ -1,0 +1,12 @@
+name: IPCW_Calibrations
+title: IPCW_Calibrations
+username:
+account: michael-barrowman
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2231312
+bundleId: 3095196
+url: https://michael-barrowman.shinyapps.io/IPCW_Calibrations/
+when: 1588465282.19606
+asMultiple: FALSE
+asStatic: FALSE

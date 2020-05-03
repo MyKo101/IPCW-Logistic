@@ -1,21 +1,11 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(ggplot2)
 library(readr)
 library(tidyverse)
-library(RCurl)
 
 Agg_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/Aggregate%20Results"
 Plot_dir <- "https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/MainPlots"
-#Plot_dir <- "MainPlots"
 
 #https://raw.githubusercontent.com/MyKo101/IPCW-Logistic/master/MainPlots/None/MainPlot_b%281%29_g%28-0.5%29_e%280.5%29.png
 
@@ -26,13 +16,10 @@ Done <- Agg_dir %>%
     summarise(n=n()) %>%
     ungroup
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
 
-    # Application title
     titlePanel("Calibration Bias Estimates"),
 
-    # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             sliderInput("b",
@@ -61,18 +48,16 @@ ui <- fluidPage(
                         choices=c("Calibration-in-the-large",
                                   "Calibration Slope",
                                   "Both")),
-            textOutput("N_show")
-        ),
+            textOutput("N_show"),
+        width=3),
 
         # Show a plot of the generated distribution
         mainPanel(
-            #plotOutput("MainPlot")
             htmlOutput("MainPlot")
         )
     )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output,session) {
     
     output$N_show <- renderText({
@@ -100,16 +85,13 @@ server <- function(input, output,session) {
                         `Calibration Slope` = "Only",
                         `Both` = "All")
         
-        .filename <- paste0(Plot_dir,"/",
-                            slope,"/",
-                            "MainPlot",
-                            "_b%28",input$b,"%29",
-                            "_g%28",input$g,"%29",
-                            "_e%28",input$e,"%29",
-                            ".png")
         
+        Check.Done <- Done %>%
+            filter(b==input$b &
+                   g==input$g &
+                   e==input$e)
         
-        if(!url.exists(.filename))
+        if(nrow(Check.Done)==0 || Check.Done$n < 6)
         {
             .filename <- paste0(Plot_dir,"/",
                                 slope,"/",
@@ -118,15 +100,18 @@ server <- function(input, output,session) {
                                 "_g%28n%29",
                                 "_e%28n%29",
                                 ".png")
+            
+        } else {
+            .filename <- paste0(Plot_dir,"/",
+                                slope,"/",
+                                "MainPlot",
+                                "_b%28",input$b,"%29",
+                                "_g%28",input$g,"%29",
+                                "_e%28",input$e,"%29",
+                                ".png")
         }
         
-        ww <- session$clientData$output_MainPlot_width
-        hh <- session$clientData$output_MainPlot_height
-       
-        ww <- min(ww,hh*(20/10))
-        hh <- min(hh,ww/(20/10))
-        
-        return(tags$img(src=.filename,width=600,height=300))
+        return(tags$img(src=.filename,width=1200,height=600))
         
     })
     
