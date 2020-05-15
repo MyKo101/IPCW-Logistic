@@ -38,12 +38,10 @@ ggMainPlot_blank <- function(Agg_dir,slope)
     select(Measure,Est)
   
   Methods <- switch(slope,
-                    None = c("KM","Weighted","Unweighted","Pseudo"),
-                    Only = c("Weighted.Slope","Unweighted.Slope",
-                             "Pseudo.Slope"),
-                    All = c("KM","Weighted","Unweighted","Pseudo",
-                            "Weighted.Slope","Unweighted.Slope",
-                            "Pseudo.Slope"))
+                    None = c("KM","LW","LU","PO"),
+                    Only = c("LWS","LUS","POS"),
+                    All = c("KM","LW","LU","PO",
+                            "LWS","LUS","POS"))
   
   tbl <- tibble(Method=Methods,
                 Est=0,SE=0,LL=0,UL=0) %>%
@@ -73,9 +71,9 @@ Prepare_Plot <- function(filename,Methods,Agg_dir)
                           U = "Under-prediction",
                           O = "Over-prediction",
                           P = "Perfect")) %>%
-    mutate(Method=recode(Method,Pseudo="PO",Unweighted="LU",Weighted="LO",
+    mutate(Method=recode(Method,Pseudo="PO",Unweighted="LU",Weighted="LW",
                          Pseudo.Slope="POS",Unweighted.Slope="LUS",
-                         Weighted.Slope="LOS"))
+                         Weighted.Slope="LWS"))
   
 }
 
