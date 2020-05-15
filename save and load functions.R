@@ -68,8 +68,6 @@ Load_Done <- function(All_dir=".",nt)
       mutate(n = map_int(as.list(fn),~nrow(read_csv(.,col_types = cols())))) %>%
       filter(n==nt) %>%
       select(b,g,e,iter,time.taken)
-      
-    
     
   } else 
   {
@@ -112,6 +110,7 @@ Load_Sim_Results <- function(X,All_dir=".")
 
 Save_Aggregate_Results <- function(X,All_dir=".",Agg_dir=".")
 {
+  cat("\n\nAggregating b=",X$b," g=",X$g," e=",X$e)
   Y <- Load_Sim_Results(X,All_dir) %>%
     mid_frac_by(0.9,it,Method,Model) %>%
     Get_PMs %>%
@@ -123,6 +122,7 @@ Save_Aggregate_Results <- function(X,All_dir=".",Agg_dir=".")
     pivot_wider(names_from=c("Method","Measure","Est"),
                 names_sep="_",
                 values_from="Value")
+  cat("\nAggregated b=",X$b," g=",X$g," e=",X$e)
 
   if(nrow(Y)> 1)
   {
@@ -135,6 +135,7 @@ Save_Aggregate_Results <- function(X,All_dir=".",Agg_dir=".")
     write_csv(Y,paste0(Agg_dir,"/",.filename))
   
   }
+  cat("\nSaved b=",X$b," g=",X$g," e=",X$e)
   return(X)
 }
 
