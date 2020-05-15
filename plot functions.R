@@ -25,7 +25,7 @@ ggMainplot <- function(tbl,.range=NULL)
   
 }
 
-ggMainPlot_blank <- function(slope)
+ggMainPlot_blank <- function(Agg_dir,slope)
 {
   
   Ranges <- read_csv(paste0(Agg_dir,"/00-Ranges.csv"),
@@ -52,7 +52,7 @@ ggMainPlot_blank <- function(slope)
            Measure=c("Bias","Coverage","EmpSE"),
            it=c(0,100))
   
-  p <- ggMainplot(tbl,.range)
+  p <- ggMainplot(tbl,Ranges)
   
   return(p)
 }
@@ -132,32 +132,22 @@ Make_MainPlot_tibble <- function(X,Agg_dir=".",slope="None")
 
 Make_All_MainPlots <- function(Agg_dir=".",Plot_dir=".",slope="None")
 {
-  Load_Done_Summary(Agg_dir) %>% 
-    group_by(b,g,e) %>%
-    summarise(n=n()) %>%
-    filter(n>5) %>%
-    ungroup %>% 
-    split(1:nrow(.)) %>%
-    map_chr(~Make_MainPlot_tibble(.,Agg_dir=Agg_dir,slope=slope) %>%
-              Save_Plot_tibble(Plot_dir=paste0(Plot_dir,"/",slope)))
-  
-  ggMainPlot_blank(slope) %>%
-    Save_Plot(b="n",g="n",e="n",p=.,Plot_dir=paste0(Plot_dir,"/",slope))
+  c(Load_Done_Summary(Agg_dir) %>% 
+        group_by(b,g,e) %>%
+      summarise(n=n()) %>%
+      filter(n>5) %>%
+      ungroup %>% 
+      split(1:nrow(.)) %>%
+      map_chr(~Make_MainPlot_tibble(.,Agg_dir=Agg_dir,slope=slope) %>%
+                Save_Plot_tibble(Plot_dir=paste0(Plot_dir,"/",slope))),
+    ggMainPlot_blank(Agg_dir,slope) %>%
+      Save_Plot(b="n",g="n",e="n",p=.,Plot_dir=paste0(Plot_dir,"/",slope))
+    )
     
   
 }
 
 
-  options(warn=2)
-for(i in 1:length(p.tib))
-{
-  cp <- p.tib[[i]]
-  cat("\nb = ",cp$b,"\tg = ",cp$g,"\te = ",cp$e)
-  print(cp$p)
-  Sys.sleep(10)
-}
-  
-  
   
   
   
