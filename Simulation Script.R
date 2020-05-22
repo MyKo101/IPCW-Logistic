@@ -1,9 +1,14 @@
 ### Load what we need:
 
 rm(list=ls())
+if(Sys.info()[1] == "Linux")
+  cluster <- T else cluster <- F
+
+
 pkgs <- c("readr","tibble","dplyr","magrittr",
           "survival","purrr","tidyr","rlang",
-          "furrr","stringr","pseudo","ggplot2")
+          "furrr","stringr","pseudo")
+if(!cluster) pkgs <- c(pkgs,"ggplot2")
 
 invisible(purrr::walk(pkgs,library,character.only=T))
 
@@ -13,12 +18,12 @@ source("calibration functions.R")
 source("save and load functions.R")
 source("dgm functions.R")
 source("aggregating functions.R")
-source("plot functions.R")
+if(!cluster) source("plot functions.R")
 
 
 ### Global Parameters to use ####################
 
-Run_parallel <- 3 #Will be set to the max of this and Cores - 1
+Run_parallel <- 60 #Will be set to the max of this and Cores - 1
 
 n <- 10000 #Population size
 N <- 100 #number of sims
@@ -47,11 +52,17 @@ memory.limit(20000)
 #Pseudo function requires large matrices,
 # so we need to increase the RAM eaten by R
 
-#Limit Cores to try to use
-Run_parallel %<>% min(parallel::detectCores()-1)
 
 #Load previous results (if relevant) & get avg time
 Done <- Load_Done_Summary("Aggregate Results")
+
+if(cluster)
+{
+  Done <- unique(bind_rows(Done,Load_Done("All Results",nt=nt)))
+}
+
+# output done table
+with(Done,table(b,g,e))
 
 avg.time <- mean(Done$time.taken,na.rm=T)/1000
 
@@ -60,24 +71,30 @@ set.seed(Sys.time())
 
 #Figure out which simulations haven't been run yet
 # Generate a value to be used as a seed here for replicability
+
+N0 <- 100
 Sims.tbd <- expand(tibble(),
                b = round(b.list,2),
                g = round(g.list,2),
                e = round(e.list,2),
                iter = 1:N) %>% 
-  anti_join(Done,by=c("b","g","e","iter")) %>%
-  mutate(seed = round(runif(n(),0,2^31-1))) %>%
+  anti_join(Done,by=c("b","g","e","iter")) %>% 
+  mutate(seed = round(runif(n(),0,2^31-1))) %>% 
   left_join(Done %>%
               group_by(b,g,e) %>%
               summarise(n=n()),
-            by=c("b","g","e")) %>%
-  filter(n < 6) %>%
+            by=c("b","g","e")) %>% 
+  mutate(n = replace_na(n,0)) %>%
+  filter(n < N0) %>% 
   group_by(b,g,e) %>%
-  slice(1:(6-n)) %>%
+  slice(1:(N0-n)) %>%
   ungroup
 
+#How many Cores to use?
+Use_Cores <- min(Run_parallel,parallel::detectCores()-1,nrow(Sims.tbd))
+
 # How long will this take?
-ETA <- nrow(Sims.tbd)*avg.time/Run_parallel
+ETA <- nrow(Sims.tbd)*avg.time/Use_Cores
 
 
 if(nrow(Sims.tbd) > 0)
@@ -86,11 +103,12 @@ if(nrow(Sims.tbd) > 0)
   
   cat("\nAverage Time per simulation: ",round(avg.time,4)," seconds",
       "\nNumber of simulations to run: ",nrow(Sims.tbd),
+      "\nNumber of Cores to use: ",Use_Cores,
       "\nTotal Estimated Time: ", round(ETA,4)," seconds",
       "\nEstimated Time of Completion: ",as.character(Sys.time() + ETA),"\n\n\n")
   
   #Set the parallel processing plan:
-  if(Run_parallel==1) plan(sequential) else plan(multiprocess,workers=Run_parallel) 
+  if(Use_Cores==1) plan(sequential) else plan(multiprocess,workers=Use_Cores) 
   
   Sims.tbd %>%
     sample_n(nrow(.)) %>% 
@@ -102,6 +120,9 @@ if(nrow(Sims.tbd) > 0)
     any
 }
 
+
+if(!cluster)
+{
 # Aggregate the data into Performance Metrics
 
 Get_All_PM("All Results","Aggregate Results",nt)
@@ -126,46 +147,7 @@ tibble(b=1,g=c(-1,0,1),e=0.5) %>%
   map(~{file.remove(.$new_file);return(.)}) %>%
   map(~file.copy(.$old_file,.$new_file))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 
 
